@@ -24,11 +24,11 @@
   // "moduleDetection": "auto",                        /* 控制使用什么方法检测模块格式的JS文件. */
 
   /* Modules */
-  "module": "CommonJS",                                /* Specify what module code is generated. */
-  "rootDir": "./src",                                  /* Specify the root folder within your source files. */
+  "module": "commonjs",                                /* Specify what module code is generated. */
+  "rootDir": "./server",                               /* Specify the root folder within your source files. */
   // "moduleResolution": "node10",                     /* Specify how TypeScript looks up a file from a given module specifier. */
   "baseUrl": "./",                                     /* Specify the base directory to resolve non-relative module names. */
-  "paths": { "@/*": ["src/*"]},                        /* 指定一组条目，将导入重新映射到其他查找位置. */
+  //"paths": { "": []},                                /* 指定一组条目，将导入重新映射到其他查找位置. */
   // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
   // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
   // "types": [],                                      /* 指定要包含但不在源文件中引用的类型包名称. */
@@ -39,7 +39,7 @@
   // "resolvePackageJsonImports": true,                /* 解析包导出时使用package.json的import字段. */
   // "customConditions": [],                           /* 解析导入时，除解析程序特定的默认值外，还要设置的条件. */
   // "noUncheckedSideEffectImports": true,             /* 检查副作用导入. */
-  // "resolveJsonModule": true,                        /* 启用导入.json文件. */
+  "resolveJsonModule": true,                        /* 启用导入.json文件. */
   // "allowArbitraryExtensions": true,                 /* 允许导入具有任何扩展名的文件，前提是存在声明文件. */
   // "noResolve": true,                                /* 不允许“import”、“require”或“<reference>”扩展TypeScript应添加到项目中的文件数量. */
 
@@ -52,9 +52,9 @@
   // "declaration": true,                              /* 从项目中的TypeScript和JavaScript文件生成.d.ts文件. */
   // "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
   // "emitDeclarationOnly": true,                      /* Only output d.ts files and not JavaScript files. */
-  // "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
+  "sourceMap": true,                                   /* Create source map files for emitted JavaScript files. */
   // "inlineSourceMap": true,                          /* Include sourcemap files inside the emitted JavaScript. */
-  // "noEmit": true,                                   /* Disable emitting files from a compilation. */
+  "noEmit": true,                                      /* Disable emitting files from a compilation. */
   // "outFile": "./",                                  /* Specify a file that bundles all outputs into one JavaScript file. If 'declaration' is true, also designates a file that bundles all .d.ts output. */
   "outDir": "./dist",                                   /* Specify an output folder for all emitted files. */
   // "removeComments": true,                           /* Disable emitting comments. */
@@ -72,7 +72,7 @@
   // "declarationDir": "./",                           /* Specify the output directory for generated declaration files. */
 
   /* Interop Constraints */
-  // "isolatedModules": true,                          /* 确保每个文件都可以安全地转换，而不依赖于其他导入. */
+  "isolatedModules": true,                          /* 确保每个文件都可以安全地转换，而不依赖于其他导入. */
   // "verbatimModuleSyntax": true,                     /* 不要转换或删除任何未仅标记为类型的导入或导出，确保它们以基于“模块”设置的输出文件格式写入. */
   // "isolatedDeclarations": true,                     /* 需要对导出进行足够的注释，以便其他工具可以轻松生成声明文件. */
   // "allowSyntheticDefaultImports": true,             /* Allow 'import x from y' when a module doesn't have a default export. */
@@ -91,11 +91,11 @@
   // "noImplicitThis": true,                           /* 当“this”的类型为“any”时，启用错误报告. */
   // "useUnknownInCatchVariables": true,               /* 默认catch子句变量为“未知”而不是“任何”. */
   // "alwaysStrict": true,                             /* Ensure 'use strict' is always emitted. */
-  // "noUnusedLocals": true,                           /* 在未读取局部变量时启用错误报告. */
-  // "noUnusedParameters": true,                       /* 未读取函数参数时引发错误. */
+  // "noUnusedLocals": true,                              /* 在未读取局部变量时启用错误报告. */
+  // "noUnusedParameters": true,                          /* 未读取函数参数时引发错误. */
   // "exactOptionalPropertyTypes": true,               /* 按原样解释可选属性类型，而不是添加“undefined”. */
   // "noImplicitReturns": true,                        /* 为函数中未显式返回的代码路径启用错误报告. */
-  // "noFallthroughCasesInSwitch": true,               /* 为switch语句中的失误情况启用错误报告. */
+  "noFallthroughCasesInSwitch": true,                  /* 为switch语句中的失误情况启用错误报告. */
   // "noUncheckedIndexedAccess": true,                 /* 使用索引访问时向类型添加“undefined”. */
   // "noImplicitOverride": true,                       /* 确保用重写修饰符标记派生类中的重写成员. */
   // "noPropertyAccessFromIndexSignature": true,       /* 强制对使用索引类型声明的键使用索引访问器. */
@@ -105,5 +105,10 @@
   /* Completeness */
   // "skipDefaultLibCheck": true,                      /* 跳过TypeScript中包含的类型检查.d.ts文件. */
   "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
-  }
+  },
+
+  "include": [
+    "server/**/*"                                       /* 包含 server 目录下的所有文件 */
+  ],
+  "exclude": ["node_modules"]
 }
