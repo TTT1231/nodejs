@@ -3,8 +3,9 @@ import { defineNodeRoute } from '../../utils/routeScanner';
 
 export default defineNodeRoute(async (req, res, next) => {
     try {
-        const accessToken = await generateJwtAccessToken({ id: 1 });
-        const refreshToken = await generateJwtRefreshToken({ id: 1 });
+        const id = req.query?.id ;
+        const accessToken = await generateJwtAccessToken({ id: id as unknown as number });
+        const refreshToken = await generateJwtRefreshToken({ id: id as unknown as number });
 
         res.cookie('accessToken', accessToken, {
             httpOnly: true,

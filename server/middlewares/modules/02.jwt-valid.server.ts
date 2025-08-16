@@ -5,6 +5,20 @@ import {
     validateJwtRefreshToken
 } from "../../utils/jwtUtil";
 import { whiteListRoutes } from "../../utils/routeWhitelistUtil";
+import type { JwtPayload } from "../../types/jwtTypes";
+
+//解决单位时间内，请求过多
+let accessTokenCache: {
+    jwtAccessToken: string;
+    payload: any; // 解码后的用户信息 
+    expiresAt: number;
+} | null = null;
+
+// ====== 当前 refresh 流程单例，避免并发重复刷新 ======
+let currentAccessTokenUpdatePromise: Promise<string> | null = null;
+const now = () => Date.now();
+const CACHE_TTL = 3 * 1000; // 3秒缓存
+
 
 //02.jwt-valid.server.ts  middleware
 export function setupJwtValidMiddleware(app: Application) {
@@ -16,21 +30,33 @@ export function setupJwtValidMiddleware(app: Application) {
 
         const accessToken = req.cookies.accessToken;
         const refreshToken = req.cookies.refreshToken;
-        
+
+        //优先使用缓存，这里是服务端，不用做验证token，且不会被篡改
+        if ((accessTokenCache !== null) && accessTokenCache.expiresAt > now()) {
+            return next();
+        }
 
         // 无任何token的情况
         if (!accessToken && !refreshToken) {
-            return res.status(401).json({ 
+            return res.status(401).json({
                 error: 'Unauthorized',
                 message: 'No token provided',
                 path: req.path
             });
         }
 
+
+
+
         // 验证Access Token
         if (accessToken) {
             try {
-                await validateJwtAccessToken(accessToken);
+                const payload: JwtPayload = await validateJwtAccessToken(accessToken);
+                accessTokenCache = {
+                    jwtAccessToken: accessToken,
+                    payload: payload,
+                    expiresAt: now() + CACHE_TTL
+                }
                 return next();
             } catch {
 
@@ -39,27 +65,54 @@ export function setupJwtValidMiddleware(app: Application) {
 
         // 验证Refresh Token
         if (refreshToken) {
-            try {
-                await validateJwtRefreshToken(refreshToken);
-                // 生成新的Access Token
-                const newAccessToken = await generateJwtAccessToken({ id: 1 });
-                console.log('[JWT Middleware] 生成新Access Token');
-                
-                // 设置新Cookie
-                res.cookie('accessToken', newAccessToken, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    maxAge: 15 * 60 * 1000 // 15分钟
-                });
-                
-                return next();
-            } catch {
-                return res.status(401).json({
-                    error: 'Unauthorized',
-                    message: 'Both tokens expired',
-                    details: 'Refresh Token expired'
-                });
+            if (currentAccessTokenUpdatePromise) {
+                try {
+                    await currentAccessTokenUpdatePromise;
+                    return next();
+
+                } catch {
+                    return res.status(401).json({
+                        error: "Unauthorized",
+                        message: "Refresh failed",
+                        details: '刷新失败',
+                    });
+                }
             }
+
+            currentAccessTokenUpdatePromise = new Promise(async (resolve, reject) => {
+                try {
+                    const refreshPayload = await validateJwtRefreshToken(refreshToken);
+
+                    const newAccessToken = await generateJwtAccessToken({
+                        id: refreshPayload.id, // userId
+                    });
+
+                    res.cookie("accessToken", newAccessToken, {
+                        httpOnly: true,
+                        secure: false,
+                        maxAge: 60 * 60 * 1000,
+                    });
+
+                    // 更新缓存
+                    accessTokenCache = {
+                        jwtAccessToken: newAccessToken,
+                        payload: { id: refreshPayload.id },
+                        expiresAt: now() + CACHE_TTL,
+                    };
+
+                    console.log("[JWT Middleware] Access Token 刷新成功");
+
+                    resolve(newAccessToken);
+                    next();
+                } catch {
+                    reject('refresh token validate fail')
+                } finally {
+                    currentAccessTokenUpdatePromise = null;
+                }
+                return;
+            });
+
+
         }
 
         // 其他无效情况

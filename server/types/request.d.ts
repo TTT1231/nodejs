@@ -7,4 +7,5 @@ export interface ExtendedRequest extends ExpressRequest {
     refreshToken?: string;
     [key: string]: any;
   };
+  userId?:number
 }
