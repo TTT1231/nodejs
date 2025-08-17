@@ -1,6 +1,6 @@
 import type { Application } from "express";
 import express from "express";
-import { setupStaticMiddleware } from "./modules/00.static.server";
+import { setupStaticMiddleware } from "./modules/00.static-resources.server";
 import { setupJsonParseMiddleware } from "./modules/01.res-json.server";
 import { setupCorsStrategyMiddleware } from "./modules/02.cors.server";
 import {setupRouterMiddleware} from "./modules/05.router.server"

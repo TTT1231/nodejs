@@ -5,46 +5,10 @@
 ## 特性
 
 - 约定式路由：按文件/目录命名自动生成 HTTP 方法与路径，无需手动注册
-- 插件/中间件分层：插件负责环境与路由注册，中间件负责解析、CORS、鉴权、路由、守卫、错误处理
+- 插件/中间件分层：插件负责环境与路由注册，中间件负责静态资源代理、req解析、CORS、鉴权、路由、守卫、错误处理
 - JWT 基于 Cookie 的鉴权与“路由白名单”（未登录可访问的路由）
 - TypeScript + ts-node 开发体验，nodemon 热更新
 - 零侵入、易读的项目结构，可渐进式扩展
-
-## 目录结构（精简）
-
-```
-server/
-	main.ts                         # 入口，初始化插件与中间件并启动服务
-	api/                            # 约定式路由目录（自动扫描并注册）
-		index.get.ts                  # GET /
-		auth/
-			login.get.ts               # GET /auth/login（发放 Cookie：accessToken、refreshToken）
-			register.post.ts           # POST /auth/register（示例）
-		tester/
-			index.ts                    # GET /tester
-			[id].get.ts                 # GET /tester/:id
-			son/
-				index.get.ts              # GET /tester/son?nihao=xxx
-				[nihao].get.ts            # GET /tester/son/:nihao（示例）
-	plugins/                        # 插件：环境变量加载、路由注册
-		modules/
-			01.insert-env.server.ts         # 按 NODE_ENV 加载 .env 文件
-			02.register-router.server.ts     # 扫描并注册路由
-	middlewares/                    # 中间件：解析、CORS、JWT、路由、守卫、错误处理
-		modules/
-			00.res-json.server.ts           # cookieParser、express.json、urlencoded
-			01.cors.server.ts               # CORS 策略（基于 CORS_ORIGIN，credentials=true）
-			02.jwt-valid.server.ts          # JWT 鉴权（基于 Cookie），支持白名单与自动续签
-			03.router.server.ts             # 挂载 Router
-			04.router-guard.server.ts       # 404 未找到
-			99.error-handler.server.ts      # 统一错误处理
-	utils/
-		jwtUtil.ts                     # 生成/校验 Access/Refresh Token
-		routeScanner.ts               # 路由扫描与注册核心（defineNodeRoute）
-		routeWhitelistUtil.ts         # 路由白名单（无需登录）
-
-package.json                      # scripts：dev（nodemon）、start（ts-node）
-```
 
 ## 快速开始
 
@@ -58,12 +22,8 @@ pnpm install
 pnpm dev
 
 # 生产/普通启动
-pnpm start
+pnpm build && pnpm run start:prod
 ```
-
-默认运行在 http://localhost:7001/
-
-> 如需修改端口，目前在 `server/main.ts` 中硬编码为 7001，可自行改为读取 `process.env.PORT`。
 
 ## 路由约定
 
@@ -77,8 +37,6 @@ pnpm start
 - `server/api/index.get.ts` -> GET `/`
 - `server/api/tester/index.ts` -> GET `/tester`
 - `server/api/tester/[id].get.ts` -> GET `/tester/:id`
-- `server/api/tester/son/index.get.ts` -> GET `/tester/son?nihao=xxx`
-- `server/api/tester/son/[nihao].get.ts` -> GET `/tester/son/:nihao`
 
 定义路由（示例）：
 
@@ -96,8 +54,8 @@ export default defineNodeRoute((req, res) => {
 ## 认证与访问控制（JWT + Cookie）
 
 - 鉴权介质：服务端通过 `Set-Cookie` 写入 `accessToken` 与 `refreshToken`（均为 httpOnly Cookie）。
-- 中间件：`02.jwt-valid.server.ts` 会拦截除白名单外的所有请求，验证 Access Token；过期时若 Refresh Token 仍有效，将自动续发新的 Access Token（同样以 Cookie 写回）。
-- 白名单：`utils/routeWhitelistUtil.ts`，默认允许：`/auth/login`、`/auth/register`。
+- 中间件：`02.jwt-valid.server.ts` 会拦截除白名单外的所有请求，验证 Access Token；过期时若 Refresh Token 仍有效，将自动续发新的 Access Token（同样以 Cookie 写回）,多并发请求下只会有一个请求去更新Access Token，其他请求等待更新完后返回。
+- 白名单：`utils/routeWhitelistUtil.ts`，默认允许：`/auth/login`、`/`。
 - 登录流程：先请求 `GET /auth/login` 获取 Cookie，再访问受保护的业务接口。
 
 示例（使用 curl 保存并携带 Cookie）：
@@ -111,18 +69,8 @@ curl -b cookies.txt http://localhost:7001/tester
 curl -b cookies.txt http://localhost:7001/tester/123
 ```
 
-说明：生产环境建议将 Cookie 的 `secure` 设为 true（当前示例代码在 development 下为 false）。
+说明：生产环境建议将 Cookie 的 `secure` 设为 true（当前示例代码在 development 下为 false，未配置ssh除外）。
 
-## 运行示例（请求）
-
-```powershell
-curl -b cookies.txt http://localhost:7001/
-# 若已登录（或将 -b cookies.txt 换为你已保存的 Cookie 路径）
-curl -b cookies.txt http://localhost:7001/tester
-curl -b cookies.txt http://localhost:7001/tester/123
-curl -b cookies.txt "http://localhost:7001/tester/son?nihao=abc"
-curl -b cookies.txt http://localhost:7001/tester/son/xyz
-```
 
 ## 插件（plugins）
 
@@ -133,11 +81,12 @@ curl -b cookies.txt http://localhost:7001/tester/son/xyz
 
 按顺序初始化：
 
-1) `00.res-json.server.ts`：`cookie-parser`、`express.json()`、`express.urlencoded()`
-2) `01.cors.server.ts`：基于 `CORS_ORIGIN` 的跨域策略，`credentials=true`
-3) `02.jwt-valid.server.ts`：JWT 鉴权（Cookie 中取 `accessToken`/`refreshToken`），支持白名单与自动续签
-4) `03.router.server.ts`：挂载由插件注册好的 Router
-5) `04.router-guard.server.ts`：兜底 404（路由未找到）
+0) `00.static-resources.server.ts` ：静态资源代理、和favicon.ico路由设置（如果有的话）
+1) `01.res-json.server.ts`：`cookie-parser`、`express.json()`、`express.urlencoded()`
+2) `02.cors.server.ts`：基于 `CORS_ORIGIN` 的跨域策略，`credentials=true`
+3) `03.jwt-valid.server.ts`：JWT 鉴权（Cookie 中取 `accessToken`/`refreshToken`），支持白名单与自动续签
+4) `04.router-guard.server.ts`：兜底 404（路由未找到）
+5) `05.router.server.ts`：挂载由插件注册好的 Router
 6) `99.error-handler.server.ts`：语法/类型/引用/网络/数据库/未知错误处理
 
 ## 环境变量
@@ -204,14 +153,13 @@ export default defineNodeRoute((req, res) => {
 ## 已知事项与建议
 
 - 路由注册依赖 `defineNodeRoute` 通过调用堆栈解析文件路径，请确保在路由文件顶层直接导出且不要包裹额外层级
-- 当前端口写死为 7001，可改造成 `process.env.PORT ?? 7001`
 - 仅扫描 `.ts` 文件，`.d.ts` 会被忽略
 - 启用 JWT 中间件后，除白名单外的接口均需携带有效 Cookie；请先访问 `/auth/login` 获取 Cookie 或为测试临时将路由加入白名单
 - 生产环境请将 Cookie `secure` 设为 true，并妥善保管 JWT 密钥
 
 ## 许可证
 
-ISC
+MIT
 
 —— 作者：TTT1231
 

@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "TTT1231",
-  "license": "ISC",
+  "license": "MIT",
   "description": "description your project",
   "devDependencies": {
     "@types/cors": "^2.8.17",
