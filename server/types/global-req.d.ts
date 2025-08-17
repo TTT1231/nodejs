@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import type { RouteDefinition } from '../utils/routeScanner';
 
 declare global {
     namespace Express {
@@ -14,6 +15,8 @@ declare global {
             };
         }
     }
+    
+    var routeDefinitions: Map<string, RouteDefinition>;
 }
 
 export {};

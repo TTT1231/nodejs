@@ -1,7 +1,7 @@
 import type { Application } from "express";
 import cors from 'cors'
 
-//01.cors.server.ts  middleware
+//02.cors.server.ts  middleware
 export function setupCorsStrategyMiddleware(app:Application){
 
     //x-requested-with 标识请求XMLHttpRequest或fetch区别游览发起请求和表单提交或者之间访问url

@@ -7,7 +7,7 @@ const handleNotFoundRoute=(app:Application)=>{
     });
 }
 
-//02.router-guard.server.ts  middleware
+//04.router-guard.server.ts  middleware
 export const setupRouterGuardMiddleware=(app:Application)=>{
     handleNotFoundRoute(app);
 }

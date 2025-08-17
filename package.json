@@ -4,6 +4,8 @@
   "main": "main.ts",
   "scripts": {
     "start": "ts-node server/main.ts",
+    "start:prod": "cd dist && set NODE_ENV=production && node main.js",
+    "build": "node esbuild.config.mjs",
     "dev": "nodemon --watch \"server/**/*.ts\" --exec \"ts-node\"  server/main.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +16,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.8.1",
+    "esbuild": "^0.25.9",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"

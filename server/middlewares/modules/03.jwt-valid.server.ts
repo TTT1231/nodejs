@@ -20,7 +20,7 @@ const now = () => Date.now();
 const CACHE_TTL = 3 * 1000; // 3秒缓存
 
 
-//02.jwt-valid.server.ts  middleware
+//03.jwt-valid.server.ts  middleware
 export function setupJwtValidMiddleware(app: Application) {
     app.use(async (req, res, next) => {
         // 白名单检查
@@ -69,7 +69,6 @@ export function setupJwtValidMiddleware(app: Application) {
                 try {
                     await currentAccessTokenUpdatePromise;
                     return next();
-
                 } catch {
                     return res.status(401).json({
                         error: "Unauthorized",
@@ -104,15 +103,24 @@ export function setupJwtValidMiddleware(app: Application) {
 
                     resolve(newAccessToken);
                     next();
-                } catch {
-                    reject('refresh token validate fail')
+                } catch (error) {
+                    reject('refresh token validate fail');
                 } finally {
                     currentAccessTokenUpdatePromise = null;
                 }
-                return;
             });
 
-
+            // 等待 refresh token 验证完成
+            try {
+                await currentAccessTokenUpdatePromise;
+                return; // next() 已经在 Promise 内部调用了
+            } catch (error) {
+                // refresh token 验证失败，返回 401 而不是让程序崩溃
+                return res.status(401).json({
+                    error: 'Unauthorized',
+                    message: 'Invalid refresh token'
+                });
+            }
         }
 
         // 其他无效情况

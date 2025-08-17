@@ -13,8 +13,20 @@ export interface RouteDefinition {
   filePath: string;
 }
 
-// 存储所有路由定义
-const routeDefinitions: Map<string, RouteDefinition> = new Map();
+// 存储所有路由定义 - 使用全局对象确保在打包后能正确共享
+global.routeDefinitions = global.routeDefinitions || new Map();
+const routeDefinitions = global.routeDefinitions;
+
+// 存储全局 router 引用，这样可以立即注册路由
+let globalRouter: Router | null = null;
+
+/**
+ * 设置全局 router 引用
+ * @param router Express Router 实例
+ */
+export function setGlobalRouter(router: Router): void {
+  globalRouter = router;
+}
 
 /**
  * 全局 defineNodeRoute 函数
@@ -29,21 +41,30 @@ export function defineNodeRoute(handler: RouteHandler): RouteHandler {
     // 找到调用 defineNodeRoute 的文件
     for (let i = 1; i < stackLines.length; i++) {
       const line = stackLines[i];
-      if (line.includes('.ts') && !line.includes('routeScanner.ts')) {
-        // 改进正则表达式以更好地匹配Windows路径，并去除行号信息
-        const match = line.match(/\(([A-Za-z]:[^:)]+\.ts)/);
+      // 支持 .ts 和 .js 文件，但排除 routeScanner 文件本身
+      if ((line.includes('.ts') || line.includes('.js')) && !line.includes('routeScanner')) {
+        // 改进正则表达式以匹配 .ts 或 .js 文件的Windows路径
+        const match = line.match(/\(([A-Za-z]:[^:)]+\.(ts|js))/);
         if (match) {
           const filePath = match[1];
           
           try {
             const { method, path: routePath } = parseRouteFromFilePath(filePath);
             
-            routeDefinitions.set(filePath, {
+            const routeDefinition = {
               handler,
               method,
               path: routePath,
               filePath
-            });
+            };
+            
+            routeDefinitions.set(filePath, routeDefinition);
+            
+            // 如果有全局 router，立即注册路由
+            if (globalRouter) {
+              registerSingleRoute(globalRouter, routeDefinition);
+            }
+            
             break;
           } catch (error) {
             console.error(`❌ Error parsing route from ${filePath}:`, error instanceof Error ? error.message : error);
@@ -57,6 +78,48 @@ export function defineNodeRoute(handler: RouteHandler): RouteHandler {
 }
 
 /**
+ * 注册单个路由到 Express Router
+ * @param router Express Router 实例
+ * @param routeDefinition 路由定义
+ */
+function registerSingleRoute(router: Router, routeDefinition: RouteDefinition): void {
+  const { method, path: routePath, handler } = routeDefinition;
+  
+  try {      
+    // 注册路由到 router
+    switch (method.toLowerCase()) {
+      case 'get':
+        router.get(routePath, handler);
+        break;
+      case 'post':
+        router.post(routePath, handler);
+        break;
+      case 'put':
+        router.put(routePath, handler);
+        break;
+      case 'delete':
+        router.delete(routePath, handler);
+        break;
+      case 'patch':
+        router.patch(routePath, handler);
+        break;
+      case 'head':
+        router.head(routePath, handler);
+        break;
+      case 'options':
+        router.options(routePath, handler);
+        break;
+      default:
+        console.warn(`⚠️ Unsupported HTTP method: ${method} for route ${routePath}`);
+        return;
+    }
+  } catch (error) {
+    console.error(`❌ Failed to register route ${method.toUpperCase()} ${routePath}:`, 
+                 error instanceof Error ? error.message : error);
+  }
+}
+
+/**
  * 从文件路径解析路由信息
  * @param filePath 文件路径
  * @returns 解析后的方法和路径
@@ -67,9 +130,10 @@ function parseRouteFromFilePath(filePath: string): { method: string; path: strin
     throw new Error('Invalid file path provided');
   }
 
-  // 验证文件是否为 TypeScript 文件
-  if (!filePath.endsWith('.ts')) {
-    throw new Error(`File must be a TypeScript file: ${filePath}`);
+  // 验证文件是否为 TypeScript 或 JavaScript 文件
+  const fileExtension = path.extname(filePath);
+  if (fileExtension !== '.ts' && fileExtension !== '.js') {
+    throw new Error(`File must be a TypeScript or JavaScript file: ${filePath}`);
   }
 
   // 标准化路径分隔符
@@ -89,8 +153,8 @@ function parseRouteFromFilePath(filePath: string): { method: string; path: strin
     throw new Error(`Invalid api file path: ${filePath}`);
   }
   
-  // 解析文件名
-  const fileName = path.basename(relativePath, '.ts');
+  // 解析文件名（移除扩展名）
+  const fileName = path.basename(relativePath, fileExtension);
   const directory = path.dirname(relativePath);
   
   // 验证文件名不为空
@@ -178,13 +242,16 @@ export async function scanApiDirectory(apiDir: string): Promise<void> {
   }
   
   try {
-    const files = await getAllTsFiles(apiDir);
-    console.log(`📂 Found ${files.length} TypeScript files in API directory`);
+    const files = await getAllRouteFiles(apiDir);
+    console.log(`📂 Found ${files.length} route files in API directory`);
     
     // 动态导入所有路由文件
     for (const file of files) {
       try {
-        await import(file);
+        // 在 Windows 上，需要将绝对路径转换为 file:// URL
+        const fileUrl = process.platform === 'win32' ? 
+          `file:///${file.replace(/\\/g, '/')}` : file;
+        await import(fileUrl);
       } catch (error) {
         console.error(`❌ Error importing route file ${path.basename(file)}:`, 
                      error instanceof Error ? error.message : error);
@@ -197,11 +264,11 @@ export async function scanApiDirectory(apiDir: string): Promise<void> {
 }
 
 /**
- * 递归获取目录下的所有 .ts 文件
+ * 递归获取目录下的所有路由文件（.ts 或 .js）
  * @param dir 目录路径
- * @returns ts 文件路径数组
+ * @returns 路由文件路径数组
  */
-async function getAllTsFiles(dir: string): Promise<string[]> {
+async function getAllRouteFiles(dir: string): Promise<string[]> {
   const files: string[] = [];
   
   try {
@@ -214,10 +281,14 @@ async function getAllTsFiles(dir: string): Promise<string[]> {
         const stat = fs.statSync(fullPath);
         
         if (stat.isDirectory()) {
-          const subFiles = await getAllTsFiles(fullPath);
+          const subFiles = await getAllRouteFiles(fullPath);
           files.push(...subFiles);
-        } else if (item.endsWith('.ts') && !item.endsWith('.d.ts')) {
-          files.push(fullPath);
+        } else {
+          // 支持 .ts 和 .js 文件，但排除 .d.ts 文件
+          const ext = path.extname(item);
+          if ((ext === '.ts' && !item.endsWith('.d.ts')) || ext === '.js') {
+            files.push(fullPath);
+          }
         }
       } catch (error) {
         console.error(`❌ Error accessing file ${fullPath}:`, 
@@ -237,7 +308,7 @@ async function getAllTsFiles(dir: string): Promise<string[]> {
  * @param router Express Router 实例
  */
 export function registerRoutes(router: Router): void {
-  for (const [, routeDefinition] of routeDefinitions) {
+  for (const [filePath, routeDefinition] of routeDefinitions) {
     const { method, path: routePath, handler } = routeDefinition;
     
     try {      
