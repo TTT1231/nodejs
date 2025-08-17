@@ -9,6 +9,11 @@ const tokenManager = new TokenManager(
     10000                   // 最多缓存 10000 个 AccessToken
 );
 
+// 每5分钟输出缓存状态（与清理周期解耦）
+setInterval(() => {
+    tokenManager.logStats();
+}, 5 * 60 * 1000);
+
 export function setupJwtValidMiddleware(app: Application) {
     app.use(async (req, res, next) => {
         if (whiteListRoutes.includes(req.path)) {
@@ -21,7 +26,9 @@ export function setupJwtValidMiddleware(app: Application) {
         if (accessToken) {
             const payload = await tokenManager.getAccessPayload(accessToken);
             if (payload) {
-                req.user = payload;
+                req.user = {
+                    id: payload.id,
+                };
                 return next();
             }
         }
@@ -29,7 +36,9 @@ export function setupJwtValidMiddleware(app: Application) {
         if (refreshToken) {
             try {
                 const payload = await tokenManager.refreshAccessToken(refreshToken, res);
-                req.user = payload;
+                req.user = {
+                    id: payload.id,
+                };
                 return next();
             } catch {
                 return res.status(401).json({
