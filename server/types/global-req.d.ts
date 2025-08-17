@@ -1,13 +1,11 @@
 import type { Request } from 'express';
 import type { RouteDefinition } from '../utils/routeScanner';
+import type { IUser } from './user';
 
 declare global {
     namespace Express {
         interface Request {
-            user?: {
-                id: string;
-                email: string;
-            };
+            user?: IUser;
             cookies: {
                 accessToken?: string;
                 refreshToken?: string;

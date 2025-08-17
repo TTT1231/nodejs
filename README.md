@@ -6,8 +6,9 @@
 
 - 约定式路由：按文件/目录命名自动生成 HTTP 方法与路径，无需手动注册
 - 插件/中间件分层：插件负责环境与路由注册，中间件负责静态资源代理、req解析、CORS、鉴权、路由、守卫、错误处理
-- JWT 基于 Cookie 的鉴权与“路由白名单”（未登录可访问的路由）
+- 解决多并发、多请求下JWT的令牌重复刷新验证情况，加上缓存刷新机制，同时加上了自动缓存、缓存淘汰机制（LRU）、加锁和统一入口机制
 - TypeScript + ts-node 开发体验，nodemon 热更新
+- 对JWT多并发操作，提供了性能监控，实时监控缓存命中及性能
 - 零侵入、易读的项目结构，可渐进式扩展
 
 ## 快速开始
@@ -54,7 +55,7 @@ export default defineNodeRoute((req, res) => {
 ## 认证与访问控制（JWT + Cookie）
 
 - 鉴权介质：服务端通过 `Set-Cookie` 写入 `accessToken` 与 `refreshToken`（均为 httpOnly Cookie）。
-- 中间件：`02.jwt-valid.server.ts` 会拦截除白名单外的所有请求，验证 Access Token；过期时若 Refresh Token 仍有效，将自动续发新的 Access Token（同样以 Cookie 写回）,多并发请求下只会有一个请求去更新Access Token，其他请求等待更新完后返回。
+- 中间件：`03.jwt-valid.server.ts` 会拦截除白名单外的所有请求，验证 Access Token；过期时若 Refresh Token 仍有效，将自动续发新的 Access Token（同样以 Cookie 写回）,多并发请求下只会有一个请求去更新Access Token，其他请求等待更新完后返回。
 - 白名单：`utils/routeWhitelistUtil.ts`，默认允许：`/auth/login`、`/`。
 - 登录流程：先请求 `GET /auth/login` 获取 Cookie，再访问受保护的业务接口。
 
