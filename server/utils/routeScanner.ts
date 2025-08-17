@@ -1,10 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { Router, Response, NextFunction } from 'express';
-import { ExtendedRequest } from '../types/request';
+import type { Router, Request,Response, NextFunction } from 'express';
 
 // 路由处理器类型 - 使用扩展的Request类型
-export type RouteHandler = (req: ExtendedRequest, res: Response, next: NextFunction) => void | Promise<void | any>;
+export type RouteHandler = (req: Request, res: Response, next: NextFunction) => void | Promise<void | any>;
 
 // 路由定义类型
 export interface RouteDefinition {

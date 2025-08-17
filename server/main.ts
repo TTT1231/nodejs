@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import http from 'http'
+import http from 'http';
 import { initPlugins } from './plugins/index';
 import { initMiddlewares } from './middlewares/index';
 

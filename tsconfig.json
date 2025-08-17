@@ -30,7 +30,10 @@
   "baseUrl": "./",                                     /* Specify the base directory to resolve non-relative module names. */
   //"paths": { "": []},                                /* 指定一组条目，将导入重新映射到其他查找位置. */
   // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
-  // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
+  "typeRoots": [                                       /* 控制类型声明文件的查找位置（.d.ts），默认 './node_modules/@types'. */
+    "./node_modules/@types",               
+    "./server/types"
+  ], 
   // "types": [],                                      /* 指定要包含但不在源文件中引用的类型包名称. */
   // "allowUmdGlobalAccess": true,                     /* 允许从模块访问UMD全局变量. */
   // "moduleSuffixes": [],                             /* 解析模块时要搜索的文件名后缀列表. */
@@ -107,8 +110,16 @@
   "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
 
-  "include": [
-    "server/**/*"                                       /* 包含 server 目录下的所有文件 */
+  /* ts-node 配置 */
+  "ts-node": {
+    "files": true,                                     /* 启用 TypeScript 的 files 选项，确保类型文件被正确加载 */
+    "transpileOnly": false                             /* 启用严格的类型检查，生产模式注意要关闭 */
+  },
+
+  /* 控制编译文件包含 */
+  "include": [                                          /* 包含 server 目录下的所有文件 */
+    "server/**/*",
+                                           
   ],
   "exclude": ["node_modules"]
 }
