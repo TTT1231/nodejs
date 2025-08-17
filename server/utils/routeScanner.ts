@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import type { Router, Request,Response, NextFunction } from 'express';
 
 // 路由处理器类型 - 使用扩展的Request类型
@@ -19,6 +20,22 @@ const routeDefinitions = global.routeDefinitions;
 
 // 存储全局 router 引用，这样可以立即注册路由
 let globalRouter: Router | null = null;
+
+/**
+ * 跨平台文件路径转换为导入路径
+ * @param filePath 文件的绝对路径
+ * @returns 适合当前平台的导入路径
+ */
+function convertToImportPath(filePath: string): string {
+  // 对于 .ts 文件（开发环境），直接使用文件路径
+  if (filePath.endsWith('.ts')) {
+    return filePath;
+  }
+  
+  // 对于 .js 文件（生产环境），使用 file:// URL
+  // pathToFileURL 会自动处理 Windows 和 macOS 的路径格式
+  return pathToFileURL(filePath).href;
+}
 
 /**
  * 设置全局 router 引用
@@ -248,10 +265,10 @@ export async function scanApiDirectory(apiDir: string): Promise<void> {
     // 动态导入所有路由文件
     for (const file of files) {
       try {
-        // 在 Windows 上，需要将绝对路径转换为 file:// URL
-        const fileUrl = process.platform === 'win32' ? 
-          `file:///${file.replace(/\\/g, '/')}` : file;
-        await import(fileUrl);
+        // 使用跨平台路径转换函数
+        const importPath = convertToImportPath(file);
+        
+        await import(importPath);
       } catch (error) {
         console.error(`❌ Error importing route file ${path.basename(file)}:`, 
                      error instanceof Error ? error.message : error);
