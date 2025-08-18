@@ -86,9 +86,10 @@ curl -b cookies.txt http://localhost:7001/tester/123
 1) `01.res-json.server.ts`：`cookie-parser`、`express.json()`、`express.urlencoded()`
 2) `02.cors.server.ts`：基于 `CORS_ORIGIN` 的跨域策略，`credentials=true`
 3) `03.jwt-valid.server.ts`：JWT 鉴权（Cookie 中取 `accessToken`/`refreshToken`），支持白名单与自动续签
-4) `04.router-guard.server.ts`：兜底 404（路由未找到）
-5) `05.router.server.ts`：挂载由插件注册好的 Router
-6) `99.error-handler.server.ts`：语法/类型/引用/网络/数据库/未知错误处理
+4) `04.rate-limit.server.ts`：基于**express-rate-limit**，防止DDos攻击
+5) `05.router-guard.server.ts`：兜底 404（路由未找到）
+6) `06.router.server.ts`：挂载由插件注册好的 Router
+7) `99.error-handler.server.ts`：语法/类型/引用/网络/数据库/未知错误处理
 
 ## 环境变量
 
