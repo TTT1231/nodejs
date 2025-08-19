@@ -1,33 +1,45 @@
 {
-  "name": "projectname",
-  "version": "1.0.0",
-  "main": "main.ts",
-  "scripts": {
-    "start": "ts-node server/main.ts",
-    "start:prod": "cd dist && set NODE_ENV=production && node main.js",
-    "build": "node esbuild.config.mjs",
-    "dev": "nodemon --watch \"server/**/*.ts\" --exec \"ts-node\"  server/main.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "TTT1231",
-  "license": "MIT",
-  "description": "description your project",
-  "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.8.1",
-    "esbuild": "^0.25.9",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
-  },
-  "dependencies": {
-    "@types/cookie-parser": "^1.4.9",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^4.21.1",
-    "express-rate-limit": "^8.0.1",
-    "jose": "^6.0.12"
-  }
+   "name": "projectname",
+   "version": "1.0.0",
+   "main": "main.ts",
+   "scripts": {
+      "start": "ts-node server/main.ts",
+      "start:prod": "cd dist && set NODE_ENV=production && node main.js",
+      "build": "node esbuild.config.mjs",
+      "dev": "nodemon --watch \"server/**/*.ts\" --exec \"ts-node\"  server/main.ts",
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "lint": "eslint .",
+      "lint:fix": "eslint \"server/**/*.{ts,js}\" --fix",
+      "format": "prettier --write \"server/**/*.{ts,js,json}\"",
+      "format:check": "prettier --check \"server/**/*.{ts,js,json}\"",
+      "code:check": "pnpm run lint && pnpm run format:check",
+      "code:fix": "pnpm run lint:fix && pnpm run format"
+   },
+   "author": "TTT1231",
+   "license": "MIT",
+   "description": "description your project",
+   "devDependencies": {
+      "@types/cors": "^2.8.17",
+      "@types/express": "^5.0.0",
+      "@types/node": "^22.8.1",
+      "@typescript-eslint/eslint-plugin": "^8.40.0",
+      "@typescript-eslint/parser": "^8.40.0",
+      "esbuild": "^0.25.9",
+      "eslint": "^9.33.0",
+      "eslint-config-prettier": "^10.1.8",
+      "eslint-plugin-prettier": "^5.5.4",
+      "nodemon": "^3.1.10",
+      "prettier": "^3.6.2",
+      "ts-node": "^10.9.2",
+      "typescript": "^5.6.3"
+   },
+   "dependencies": {
+      "@types/cookie-parser": "^1.4.9",
+      "cookie-parser": "^1.4.7",
+      "cors": "^2.8.5",
+      "dotenv": "^17.2.1",
+      "express": "^4.21.1",
+      "express-rate-limit": "^8.0.1",
+      "jose": "^6.0.12"
+   }
 }
