@@ -1,6 +1,7 @@
 import type { Express } from "express";
-import { AllowOriginEnum } from "../../enums/allowOrigin"
 import cors from 'cors'
+
+const FRONTSERVER = 'http://localhost:7000';
 export function setupCorsStrategy(app:Express){
 
     const customHeaders=["my-socketio-header"]
@@ -10,7 +11,7 @@ export function setupCorsStrategy(app:Express){
 
 
     const corsOptions = {
-        origin: `${AllowOriginEnum.FRONTSERVER}`,
+        origin: FRONTSERVER,
         optionsSuccessStatus: 200,
         credentials: true,
         method:['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

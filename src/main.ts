@@ -1,6 +1,4 @@
 import express from 'express';
-
-
 import http from 'http'
 import { setupCorsStrategy } from './logic/cors';
 import router from './router';
@@ -16,10 +14,6 @@ setupCorsStrategy(app);
 
 //创建http服务器
 const server = http.createServer(app);
-
-
-// 静态资源代理
-app.use(express.static('public'));
 
 //路由中间件
 app.use(router);
